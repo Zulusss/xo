@@ -30,7 +30,8 @@ void Builder::buildTree() {
     i = chooseNodeToExpand();
 
     if (i == -1) {
-        logger->error("builder fallback");
+        if (count==count0) return;
+        //logger->error("builder fallback");
         ++cur->node->totalDirectChilds;
         back();
         cur = current();
@@ -75,7 +76,7 @@ int Builder::chooseNodeToExpand() {
 //  do {
         for (int i = 0; i < childs.count; ++i) {
             TNode *node = childs.node[i];
-            if (node->rating <= - 32300 || node->rating >= 32300)
+            if (node->rating <= - 32500 || node->rating >= 32500)
                 continue;
 
             int ttc = node->ratingToTotalChilds();

@@ -16,6 +16,7 @@ public:
                  bool *swapX, bool *swapY, bool *swapW, bool *swapXYW, int gameMode);
 
         bool put(TMove N);//can flip board
+        bool forceForward(TMove N);
         int move();
 
 };

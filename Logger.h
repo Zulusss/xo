@@ -12,6 +12,7 @@ class Logger {
         int missAgeCount;
         int missHashCount;
         int missIndexCount;
+        int hashOverwriteCount;
         const char* lastError;
         int expandEven;
         int expandOdd;
@@ -30,6 +31,7 @@ class Logger {
         void missHash();
         void missIndex();
         void expand(int count);
+        void hashOverwrite();
 
         void error(const char *message);
 

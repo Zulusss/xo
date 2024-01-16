@@ -21,6 +21,7 @@ Logger::Logger() {
         bigParentsCulled2 = 0;
         bigGrandParentsCulled1 = 0;
         bigGrandParentsCulled2 = 0;
+        hashOverwriteCount = 0;
 }
 
 void Logger::hit() {
@@ -37,6 +38,9 @@ void Logger::missHash() {
 
 void Logger::missIndex() {
         ++missIndexCount;
+}
+void Logger::hashOverwrite() {
+        ++hashOverwriteCount;
 }
 
 void Logger::error(const char* message) {
@@ -56,7 +60,8 @@ void Logger::printLastError(char *buffer) {
         //sprintf(buffer, "%d ", (expandEven*100 / (1+expandOdd + expandEven)));
 
         if (lastError == NULL) {
-        sprintf(buffer, "%d/%d/%d/%d", bigParentsCulled1, bigParentsCulled2, bigGrandParentsCulled1, bigGrandParentsCulled2);
+                sprintf(buffer, "over = %dK", hashOverwriteCount/1000);
+                //sprintf(buffer, "%d/%d/%d/%d", bigParentsCulled1, bigParentsCulled2, bigGrandParentsCulled1, bigGrandParentsCulled2);
         } else {
 
         sprintf(buffer,

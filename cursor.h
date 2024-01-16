@@ -57,9 +57,9 @@ public:
 
   TMove kl[fsize*fsize]; // moves on field
   bool isAlllowed(TMove N);
-
-private:
         inline bool allow(int move);
+private:
+
         void enable(CursorHistory *curr, int x, int y, int maxDistance);
 protected:
 

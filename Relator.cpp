@@ -72,28 +72,29 @@ void Relator::updateParents(TNode *node, int removed, int removedFromEnd,
                     ? true
                     : false,
                 updateRating, i-1, addedChilds);
-        } else {
-                if (i == max && onlyLastRemoved) {
-                        logger->error("no parent found");
-                        getParent(node, history[i].move);
-                }
+//        } else {
+//                if (i == max && onlyLastRemoved) {
+//                        logger->error("no parent found");
+//                        getParent(node, history[i].move);
+//                }
         }
     }
 };
 
 bool Relator::updateNode(TNode *node, TNode *from, bool updateRating, int addedChilds, int removedFromEnd) {
     bool ratingUpdated = false;
-    if (updateRating || addedChilds == 0) {
+//    if (!node->fixedRating && (updateRating || addedChilds == 0)) {
+    if ((updateRating || addedChilds == 0)) {
         short int max_rating = -32600;
 
-//        bool fromFound = false;
+        bool fromFound = false;
         if (gameMode == 1 && node->age == 1) {
                 for (TMove i = 0; i < TOTAL_CELLS; ++i) {
                     if (isPerspectiveChildMode1(i)) {
                         TNode *child = getChild(node, i);
-//                        if (child == from) {
-//                                fromFound = true;
-//                        }
+                        if (child == from) {
+                                fromFound = true;
+                        }
                         if (child != NULL && child->rating > max_rating) {
                             max_rating = child->rating;
                         }
@@ -114,9 +115,9 @@ bool Relator::updateNode(TNode *node, TNode *from, bool updateRating, int addedC
                 for (TMove i = 0; i < TOTAL_CELLS; ++i) {
                     if (kl[i]!=0) {
                         TNode *child = getChild(node, i);
-//                        if (child == from) {
-//                                fromFound = true;
-//                        }
+                        if (child == from) {
+                                fromFound = true;
+                        }
                         if (child != NULL && child->rating > max_rating) {
                             max_rating = child->rating;
                         }
@@ -124,18 +125,24 @@ bool Relator::updateNode(TNode *node, TNode *from, bool updateRating, int addedC
                 }
         }
 
-        /*
+
         if (fromFound==false) {
                 logger->error("from not found");
                 if (from->rating > max_rating) {
                     max_rating = from->rating;
                 }
                 //updateNode(node, from, updateRating, addedChilds, removedFromEnd);
-        } */
+        }
+
+        if (max_rating > 30000) --max_rating;
+        else if (max_rating < -30000) ++max_rating;
 
         if (node->rating != -max_rating) {
             TRating absRatingOld = node->rating;
             TRating absRating = node->rating = -max_rating;
+            if (node->age == 0) {
+                movesHash->medRating = absRating;
+            }
 
             if (node->totalChilds >= BIG_PARENT) {
                 if (absRatingOld < 0) absRatingOld = -absRatingOld;
@@ -179,7 +186,7 @@ TNode* Relator::getParent(TNode *node, TMove move) {
     unsigned long m2 = THASH_MAX / multiplier;
     unsigned long r1 = (THASH_MAX % multiplier) + 1;
 
-    for(;;++k) {
+    for(;k<multiplier;++k) {
         t = r1*k + remainder;
         n = t/multiplier;
         r3 = t%multiplier;

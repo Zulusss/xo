@@ -14,15 +14,15 @@ TMainForm *MainForm;
 
 #define MAX_CHILDS_WIZARD  40000000
 
-#define MAX_CHILD_PER_MOVE_ZONE0  6000000
-#define MAX_CHILD_PER_MOVE_ZONE1  1000000
+#define MAX_CHILD_PER_MOVE_ZONE0  12000000
+#define MAX_CHILD_PER_MOVE_ZONE1  6000000
 
 #define MAX_CHILD_DECREASE_FACTOR 6
-#define MAX_CHILD_DECREASE_SINCE 16000000
-#define MAX_CHILD_DECREASE_TILL 32000000
+#define MAX_CHILD_DECREASE_SINCE 50000000
+#define MAX_CHILD_DECREASE_TILL 90000000
 
 #define ZONE01_RATING 5700
-#define ZONE12_RATING 10000
+#define ZONE12_RATING 32500
 
 
 DWORD WINAPI __stdcall grow(LPVOID lpParam) {
@@ -57,8 +57,9 @@ DWORD WINAPI __stdcall grow(LPVOID lpParam) {
         bool changed = true;
 
         TNode *firstNode = f->xo->getFirstNode();
+        TNode *lastMove = f->xo->lastMove();
 
-        TRating currRating = f->xo->lastMove()->rating;
+        TRating currRating = lastMove->rating;
         TRating currXRating = f->xo->count%2
                         ? currRating
                         : -currRating;
@@ -101,11 +102,12 @@ DWORD WINAPI __stdcall grow(LPVOID lpParam) {
                 : 1;
         if (mcdf < 1) mcdf=1;
 
+
         int maxChilds = currRating < ZONE01_RATING && currRating > -ZONE01_RATING
                 ? MAX_CHILD_PER_MOVE_ZONE0 / mcdf
                 : currRating < ZONE12_RATING && currRating > -ZONE12_RATING
                         ? MAX_CHILD_PER_MOVE_ZONE1 / mcdf
-                        :f->CSpinEditChilds->Value*1000 + 1;
+                        :childPerMove + 1;
         if (maxChilds < childPerMove) {
                 maxChilds = childPerMove;
         }
@@ -118,8 +120,8 @@ DWORD WINAPI __stdcall grow(LPVOID lpParam) {
                 int i;
                 bool res = f->xo->put(f->userMoveRequested);
                 if (res) {
-                        int totl = f->xo->lastMove()->totalChilds;
-                        f->resultRecieved = f->xo->lastMove()->rating;
+                        int totl = lastMove->totalChilds;
+                        f->resultRecieved = lastMove->rating;
                         if ((res < 32600)&&(f->ComboBoxMode->ItemIndex == 1)) {
                             f->moveRequested = true;
                         }
@@ -127,16 +129,19 @@ DWORD WINAPI __stdcall grow(LPVOID lpParam) {
                 f->userMoveRequested = 255;
 
         } else if (f->moveRequested &&
-                (wizardMode || f->xo->lastMove()->totalChilds >= childPerMove
-                        || f->xo->lastMove()->rating < -20000
-                        || f->xo->lastMove()->rating > 20000
-                        || f->xo->lastMove()->totalDirectChilds == 1)) {
+                (wizardMode || lastMove->totalChilds >= childPerMove
+                        || lastMove->rating < -20000
+                        || lastMove->rating > 20000
+                        || lastMove->totalDirectChilds == 1
+                        || lastMove->o4 > 0)) {
 
           f->moveRequested = false;
           flowRating = currRating;
           f->resultRecieved = f->xo->move();
-          childs0 = f->xo->lastMove()->totalChilds;
-          currRating = f->xo->lastMove()->rating;
+          if (f->resultRecieved == -32600)
+                f->restartRequested = true;
+          childs0 = lastMove->totalChilds;
+          currRating = lastMove->rating;
         } else if (f->takeBackRequested) {
             f->takeBackRequested = false;
 
@@ -163,7 +168,7 @@ DWORD WINAPI __stdcall grow(LPVOID lpParam) {
                 //f->xo->lastmove = f->xo->cursorLink->node; //TODO is it needed?
             }
 
-            currRating = f->xo->lastMove()->rating;
+            currRating = lastMove->rating;
         }
 
         //********* STEP 3   autoplay stuff ***************
@@ -180,7 +185,7 @@ DWORD WINAPI __stdcall grow(LPVOID lpParam) {
                 }
         }
 
-        unsigned int lastCount = f->xo->lastMove()->totalChilds;
+        unsigned int lastCount = lastMove->totalChilds;
         if (wizardMode >= 0 && (f->ComboBoxMode->ItemIndex > 1)
                 && (lastCount >= (mediumicPlay
                                         ? f->CSpinEditChilds->Value*1000
@@ -192,8 +197,8 @@ DWORD WINAPI __stdcall grow(LPVOID lpParam) {
         //********* STEP 4   tree grow ***************
 
         if (lastCount <  maxChilds
-                        && currRating < 32300
-                        && currRating > -32300
+                        && currRating < 32500
+                        && currRating > -32500
                         && f->CheckBoxGrow->Checked) {
           f->xo->buildTree();
           changed = false;
@@ -228,8 +233,6 @@ DWORD WINAPI __stdcall grow(LPVOID lpParam) {
               int decr;
               int i=0;
 
-              TNode *node = f->xo->lastMove();
-
               //begin hints calculation
               f->xo->calculateChilds();
               for(i=0; i < f->xo->childs.count; ++i) {
@@ -249,7 +252,7 @@ DWORD WINAPI __stdcall grow(LPVOID lpParam) {
 
               f->movesCount = f->xo->count;
               int i1 = firstNode->totalChilds;
-              int i2 = node->totalChilds;
+              int i2 = lastMove->totalChilds;
 
               sprintf(f->msg1, "Childs count: %d%c / %d%c",
                             i1 / (i1 > 2000000 ? 1000000 : i1 > 2000 ? 1000 : 1), (i1 > 2000000 ? 'M' : i1 > 2000 ? 'K' : ' '),
@@ -257,7 +260,7 @@ DWORD WINAPI __stdcall grow(LPVOID lpParam) {
 
               sprintf(f->msg2, "Rating: %d / %d",
                         f->xo->getFirstNode()->rating,
-                        f->xo->lastMove()->rating);
+                        lastMove->rating);
 
               sprintf(f->msg3, "Max path length: %d",
                         f->xo->max_count);
@@ -293,8 +296,8 @@ DWORD WINAPI __stdcall grow(LPVOID lpParam) {
 */
 
               f->xRating = f->xo->count%2
-                ? f->xo->lastMove()->rating
-                : -f->xo->lastMove()->rating;
+                ? lastMove->rating
+                : -lastMove->rating;
 
               f->Invalidate();
               f->grid->Invalidate();
@@ -407,11 +410,11 @@ void __fastcall TMainForm::gridDrawCell(TObject *Sender, int Col, int Row,
     }
     grid->Canvas->Pen->Width = penW;
     if (found && xo->kl[N]&8) {//draw 'o'
-      grid->Canvas->Pen->Color = foundLast ? (Graphics::TColor) RGB(255, 136, 136) : clRed;
+      grid->Canvas->Pen->Color = foundLast ? (Graphics::TColor) RGB(255, 160, 160) : clRed;
       grid->Canvas->Ellipse(Rect.Left+2,Rect.Top+2,Rect.Right-2,Rect.Bottom-2);
     }
     if (found && xo->kl[N]&4) {//draw 'x'
-      grid->Canvas->Pen->Color = foundLast ? (Graphics::TColor) RGB(136, 136, 255) : clBlue;
+      grid->Canvas->Pen->Color = foundLast ? (Graphics::TColor) RGB(168, 168, 255) : clBlue;
       grid->Canvas->MoveTo(Rect.Left+2,Rect.Top+2);
       grid->Canvas->LineTo(Rect.Right-3,Rect.Bottom-3);
       grid->Canvas->MoveTo(Rect.Right-3,Rect.Top+2);

@@ -57,6 +57,11 @@ bool Cursor::forward(TMove N) {
 
   TNode *node = current()->node;
 
+  if (node->rating==32600) {
+        logger->error("gameover");
+        return false;
+        }
+
   THash hashCodeX = node->hashCodeO;
   THash hashCodeO = node->hashCodeX * simplyGen->getHash(N);
 

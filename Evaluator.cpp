@@ -105,10 +105,7 @@ void Evaluator::rate(TNode *src, TNode *destNode, TMove move) { //fills {totalRa
     if (scanlines(0, t, move)) {
       destNode->rating = 32600;
       return;
-    } else {
-        //should never happen (?)
-        t=t;
-    }
+    } 
   int ret = 0;
   bool c3my = false;
   if (destNode->x4 > 0)//закрыть 4
